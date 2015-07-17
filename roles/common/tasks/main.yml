@@ -1,0 +1,84 @@
+---
+
+   - name: Create the hosts file for all machines
+     template: src=hosts.j2 dest=/etc/hosts
+
+   - name: Add repo
+     template: src=maria.repo.j2 dest=/etc/yum.repos.d/maria.repo
+
+   - name: remove conflicting packages
+     yum: name=mariadb-libs state=absent
+
+   - name: Install MariaDB-Galera-server
+     yum: name=MariaDB-Galera-server state=latest
+
+   - name: Install MariaDB-client
+     yum: name=MariaDB-client state=latest
+
+   - name: Install Galera
+     yum: name=galera state=latest
+
+   - name: Start MySQL
+     service: name=mysql state=started
+   
+#   Removing this for now as mariadb-galera has conflicts with mariadb-libs. 
+#   Ansible mysql_user module needs MySQL-python which depends mariadb-libs.
+#   Work around added above.
+#
+
+#  - name: Install dependency 
+#    yum: name=MySQL-python state=latest
+
+   - name: Set root password
+     command: mysqladmin -u root password {{ mysql_root_password }}
+     ignore_errors: yes
+#   Removing this for now as mariadb-galera has conflicts with mariadb-libs. 
+#   Ansible mysql_user module needs MySQL-python which depends mariadb-libs.
+#   Work around added above.
+#
+#   - name: secure installation
+#     mysql_user: name=root host={{ item }} password={{ mysql_root_password }}
+#     with_items:
+#        - 127.0.0.1
+#        - ::1
+#        - localhost
+
+   - name: copy .my.cnf file with root password credentials
+     template: src=my.cnf.j2 dest=/root/.my.cnf owner=root mode=0600
+
+   - name: delete anonymous MySQL server user for $server_hostname 
+     command: mysql -u root -p{{mysql_root_password}} -e "DELETE FROM mysql.user WHERE User='';"
+     ignore_errors: yes
+#   Removing this for now as mariadb-galera has conflicts with mariadb-libs. 
+#   Ansible mysql_user module needs MySQL-python which depends mariadb-libs.
+#   Work around added above.
+#
+#  - name: delete anonymous MySQL server user for $server_hostname 
+#    action: mysql_user user="" host="localhost" state="absent"
+
+#   - name: delete anonymous MySQL server user for localhost
+#     action: mysql_user user="" state="absent"
+
+ #  - name: remove the MySQL test database
+ #    action: mysql_db db=test state=absent
+
+   - name: remove the MySQL test database
+     command: mysql -u root -p{{mysql_root_password}} -e "drop database test;"
+     ignore_errors: yes
+
+   - name: create user for cluster
+     command: mysql -u root -p{{mysql_root_password}} -e "CREATE USER 'stt_user'@'localhost' IDENTIFIED BY '{{ stt_user_pass }}';"
+     ignore_errors: yes
+
+   - name: grant user privileges
+     command: mysql -u root -p{{mysql_root_password}} -e "GRANT ALL PRIVILEGES ON * . * TO 'stt_user'@'localhost';"
+     ignore_errors: yes
+
+   - firewalld: port=4567/tcp permanent=true state=enabled 
+   - firewalld: port=4444/tcp permanent=true state=enabled 
+   - service: name=firewalld state=restarted
+
+   - name: Creates directory
+     file: path=/var/log/mysql state=directory
+  
+#  - mysql_user: name=sst_user password={{ stt_user_pass }} priv=*.*:ALL,GRANT state=present

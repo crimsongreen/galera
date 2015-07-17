@@ -1,0 +1,14 @@
+---
+
+galera1: "{{ hostvars[host]['ansible_eth0']['ipv4']['address'] }}"
+galera2: "{{ hostvars[host]['ansible_eth0']['ipv4']['address'] }}"
+galera3: "{{ hostvars[host]['ansible_eth0']['ipv4']['address'] }}"
+
+iface: '{{ ansible_default_ipv4.interface }}'
+
+mysql_root_password: "LFajw0ffn9f"
+stt_user_pass: "Cz0xcoi0wdd!1"
+
+galera1ip: "0.0.0.0"
+galera2ip: "0.0.0.0"
+galera3ip: "0.0.0.0"

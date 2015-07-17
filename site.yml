@@ -1,0 +1,30 @@
+---
+   - name: Installation for all servers
+     hosts: all
+     remote_user: root
+     sudo: yes
+
+     roles:
+      - common
+
+   - name: Configure Galera-1
+     hosts: galera1
+     remote_user: root
+
+     roles:
+      - galera-1
+
+   - name: Configure Galera-2
+     hosts: galera2
+     remote_user: root
+
+     roles:
+      - galera-2
+
+
+   - name: Configure Galera-3
+     hosts: galera3
+     remote_user: root
+
+     roles:
+      - galera-3
